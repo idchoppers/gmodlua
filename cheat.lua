@@ -6,7 +6,7 @@ function thirdeye()
         if v:IsAdmin() or v:IsSuperAdmin() then
             draw.DrawText("" ..v:Name().. "[ADMIN]", "Trebuchet24", plrpos.x, plrpos.y, Color(220, 60, 90, 255), 1)
         else
-            draw.DrawText(v:Name(), "Trebuchet24", plrpos.x, plrpos.y, Color(255, 0, 0), 1)
+            draw.DrawText(v:Name(), "Trebuchet24", plrpos.x, plrpos.y, Color(0, 255, 0), 1)
         end
     end
 end
@@ -34,13 +34,10 @@ hook.Add("Think", "bhop", bhop)
 function trigga()
     local Target = LocalPlayer():GetEyeTrace().Entity
     if LocalPlayer():Alive() and LocalPlayer():GetActiveWeapon():IsValid() and ( Target:IsPlayer() or Target:IsNPC() ) then
-        if !Firing then
-            RunConsoleCommand("+attack")
-            timer.Create("trigga", 0, 0.01, function()
-            RunConsoleCommand( "-attack" )
-            end)
-            Firing = false
-        end
+        RunConsoleCommand("+attack")
+        timer.Create("trigga", 0, 0.01, function()
+        RunConsoleCommand( "-attack" )
+        end)
     end
 end
 
