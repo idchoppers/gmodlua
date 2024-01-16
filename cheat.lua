@@ -9,24 +9,17 @@ print(string.format("\n\n\n*** cheat.lua by idchoppers ***\n\n\n"))
 -- global pi
 PI = math.pi
 
--- helper function for finding the attatchment ID, from the gmod wiki
-function get_attachment(ent)
-    local attachID = -1
-    if ent != nil then
-        local ID = ent:LookupAttachment("eyes")
-        attachID = ent:GetAttachment(ID)
-    end
-    return attachID
-end
-hook.Add("Think", "get_attachment", get_attachment)
-
 -- finds dist between singular ent and player
 function target_dist(ent)
     local dist = -1
-    if ent != nil then
-        local myHeadPos = get_attachment(LocalPlayer()).Pos
-    
-        local entHeadPos = (get_attachment(ent)).Pos
+    if ent == nil then
+        print("target_dist(nil)")
+        return dist
+    else
+        local myHeadPos = LocalPlayer():EyePos()
+
+        local BonePos, BoneAng = ent:GetBonePosition(ent:LookupBone("ValveBiped.Bip01_Head1"))
+        local entHeadPos = BonePos
         local relativeX = (entHeadPos.x) - (myHeadPos.x)
         local relativeY = (entHeadPos.y) - (myHeadPos.y)
         local relativeZ = (entHeadPos.z) - (myHeadPos.z)
@@ -40,12 +33,15 @@ hook.Add("Think", "target_dist", target_dist)
 function closest_player()
     local min = 9999999999999999999.99
     local playerID = -1
-    local myHeadPos = get_attachment(LocalPlayer()).Pos
+    local myHeadPos = LocalPlayer():EyePos()
 
     for k, v in pairs (player.GetAll()) do
         if v == nil then
-        elseif v:SteamID() != LocalPlayer():SteamID() and v:Health() > 0 then
-            local entHeadPos = get_attachment(v).Pos
+            print("closest_player(nil)")
+            return playerID
+        elseif v != LocalPlayer() and v:Health() > 0 then
+            local BonePos, BoneAng = v:GetBonePosition(v:LookupBone("ValveBiped.Bip01_Head1"))
+            local entHeadPos = BonePos
             local relativeX = (entHeadPos.x) - (myHeadPos.x)
             local relativeY = (entHeadPos.y) - (myHeadPos.y)
             local relativeZ = (entHeadPos.z) - (myHeadPos.z)
@@ -72,29 +68,33 @@ function aimbot()
     local target
     for k, v in pairs (player.GetAll()) do
         if v == nil then
-        elseif k == closest_player() then
-            target = v
+            print("aimbot(nil)")
+            break
+        else
+            if k == closest_player() then
+                target = v
 
-            --local myHeadPos = get_attachment(LocalPlayer()).Pos
-            local myHeadPos = LocalPlayer():GetShootPos()
-            local entHeadPos = get_attachment(target).Pos
-            local relativeX = (entHeadPos.x) - (myHeadPos.x)
-            local relativeY = (entHeadPos.y) - (myHeadPos.y)
-            local relativeZ = (entHeadPos.z) - (myHeadPos.z)
-            local distanceFromMe = math.sqrt((relativeX * relativeX) + (relativeY * relativeY))
+                local myHeadPos = LocalPlayer():EyePos()
+                local BonePos, BoneAng = v:GetBonePosition(v:LookupBone("ValveBiped.Bip01_Head1"))
+                local entHeadPos = BonePos
+                local relativeX = (entHeadPos.x) - (myHeadPos.x)
+                local relativeY = (entHeadPos.y) - (myHeadPos.y)
+                local relativeZ = (entHeadPos.z) - (myHeadPos.z)
+                local distanceFromMe = math.sqrt((relativeX * relativeX) + (relativeY * relativeY))
 
-            local yaw = math.atan2(relativeY, relativeX)
-            local pitch = math.atan2(relativeZ, distanceFromMe)
+                local yaw = math.atan2(relativeY, relativeX)
+                local pitch = math.atan2(relativeZ, distanceFromMe)
 
-            yaw = (yaw * 180 / PI)
-            pitch = (pitch * 180 / PI) * -1 -- the pitch should be converted to its opposite for it to work in source
+                yaw = (yaw * 180 / PI)
+                pitch = (pitch * 180 / PI) * -1 -- the pitch should be converted to its opposite for it to work in source
 
-            -- traceline from player to target to check if you have line of sight
-            local trace = { start = myHeadPos, endpos = entHeadPos, filter = LocalPlayer()}
-            local traceResult = util.TraceLine(trace, LocalPlayer())
+                -- traceline from player to target to check if you have line of sight
+                local trace = { start = myHeadPos, endpos = entHeadPos, filter = LocalPlayer()}
+                local traceResult = util.TraceLine(trace, LocalPlayer())
 
-            if traceResult.Entity == target then
-                LocalPlayer():SetEyeAngles(Angle(pitch, yaw, 0))
+                if traceResult.Entity == target then
+                    LocalPlayer():SetEyeAngles(Angle(pitch, yaw, 0))
+                end
             end
         end
     end
@@ -105,6 +105,8 @@ function esp()
     local myPos = LocalPlayer():GetPos()
     for k, v in pairs (player.GetAll()) do
         if v == nil then
+            print("esp(nil)")
+            break
         elseif v:SteamID() == LocalPlayer():SteamID() then
         elseif v:Health() <= 0 then
         elseif v:IsAdmin() or v:IsSuperAdmin() then
@@ -128,14 +130,18 @@ function tracers()
 
     for k, v in pairs (player.GetAll()) do
         if v == nil then
+            print("tracers(nil)")
+            break
         elseif v:SteamID() == LocalPlayer():SteamID() then
         elseif v:Health() <= 0 then
         elseif v:IsAdmin() or v:IsSuperAdmin() then
-            local entHeadPos = (get_attachment(v).Pos):ToScreen()
+            local BonePos, BoneAng = v:GetBonePosition(v:LookupBone("ValveBiped.Bip01_Head1"))
+            local entHeadPos = BonePos:ToScreen()
             surface.SetDrawColor(220, 60, 90, 255)
             surface.DrawLine(center.x, center.y, entHeadPos.x, entHeadPos.y) 
         else
-            local entHeadPos = (get_attachment(v).Pos):ToScreen()
+            local BonePos, BoneAng = v:GetBonePosition(v:LookupBone("ValveBiped.Bip01_Head1"))
+            local entHeadPos = BonePos:ToScreen()
             surface.SetDrawColor(0, 255, 0)
             surface.DrawLine(center.x, center.y, entHeadPos.x, entHeadPos.y)
         end 
