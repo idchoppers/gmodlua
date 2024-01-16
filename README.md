@@ -7,4 +7,14 @@ My own GMod Lua script that includes:
 
 Each function is toggled on or off by using the command line in game (meaning you can bind keys to their commands)
 
-Generates 0 Lua errors!
+Now generates 0 Lua errors!
+
+---
+
+How to use:
+
+1. place script in GarrysMod/garrysmod/lua
+2. start, or join, a game
+3. run ```sv_allowcslua 1```
+4. run ```lua_openscript_cl cheat.lua``` in the console
+5. now the script is loaded, toggle some functions!
