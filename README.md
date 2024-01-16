@@ -15,6 +15,6 @@ How to use:
 
 1. place script in GarrysMod/garrysmod/lua
 2. start, or join, a game
-3. run ```sv_allowcslua 1```
+3. run ```sv_allowcslua 1``` in the console
 4. run ```lua_openscript_cl cheat.lua``` in the console
 5. now the script is loaded, toggle some functions!
