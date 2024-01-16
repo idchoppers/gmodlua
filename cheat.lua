@@ -1,23 +1,146 @@
--- idchoppers goofy ah gmod cheats
+-- By idchoppers
+print(string.format("\n\n\n*** cheat.lua by idchoppers ***\n\n\n"))
+-- load the cheat by placing in GarrysMod/garrysmod/lua
+-- then run lua_openscript_cl filename
+-- run individual hooks by running lua_run_cl "function()"
 
-function thirdeye()
+-- server must have sv_allowcslua 1
+
+-- global pi
+PI = math.pi
+
+-- helper function for finding the attatchment ID, from the gmod wiki
+function get_attachment(ent)
+    local attachID = -1
+    if ent != nil then
+        local ID = ent:LookupAttachment("eyes")
+        attachID = ent:GetAttachment(ID)
+    end
+    return attachID
+end
+hook.Add("Think", "get_attachment", get_attachment)
+
+-- finds dist between singular ent and player
+function target_dist(ent)
+    local dist = -1
+    if ent != nil then
+        local myHeadPos = get_attachment(LocalPlayer()).Pos
+    
+        local entHeadPos = (get_attachment(ent)).Pos
+        local relativeX = (entHeadPos.x) - (myHeadPos.x)
+        local relativeY = (entHeadPos.y) - (myHeadPos.y)
+        local relativeZ = (entHeadPos.z) - (myHeadPos.z)
+        dist = math.sqrt((relativeX * relativeX) + (relativeY * relativeY))
+    end
+    return dist
+end
+hook.Add("Think", "target_dist", target_dist)
+
+-- finds the closest player for the ab, using a min algo to find this
+function closest_player()
+    local min = 9999999999999999999.99
+    local playerID = -1
+    local myHeadPos = get_attachment(LocalPlayer()).Pos
+
     for k, v in pairs (player.GetAll()) do
-        local plrpos = (v:GetPos() + Vector(0, 0, 80)):ToScreen()
-        if v:IsAdmin() or v:IsSuperAdmin() then
-            draw.DrawText("" ..v:Name().. "[ADMIN]", "Trebuchet24", plrpos.x, plrpos.y, Color(220, 60, 90, 255), 1)
-        else
-            draw.DrawText(v:Name(), "Trebuchet24", plrpos.x, plrpos.y, Color(0, 255, 0), 1)
+        if v == nil then
+        elseif v:SteamID() != LocalPlayer():SteamID() and v:Health() > 0 then
+            local entHeadPos = get_attachment(v).Pos
+            local relativeX = (entHeadPos.x) - (myHeadPos.x)
+            local relativeY = (entHeadPos.y) - (myHeadPos.y)
+            local relativeZ = (entHeadPos.z) - (myHeadPos.z)
+            local distanceFromMe = math.sqrt((relativeX * relativeX) + (relativeY * relativeY))
+
+            if distanceFromMe <= min then
+                min = distanceFromMe
+                playerID = k
+            end
+        end
+    end
+    return playerID
+end
+hook.Add("Think", "closest_player", closest_player)
+
+-- tan for ratio, arctan2 for yaw and pitch
+-- need the distance vector of the target's head to use
+-- distance vector = sqrt((x*x)+(y*y))
+-- can use lua's math lib for tan and arctan2 functions
+-- we need the arctan2 to allow for a pi interval to allow results in all 4 quadrants and not pi/2,
+-- giving us only results in 2 quadrants
+-- this function uses closest_entity() and TraceLine() for targeting
+function aimbot()
+    local target
+    for k, v in pairs (player.GetAll()) do
+        if v == nil then
+        elseif k == closest_player() then
+            target = v
+
+            --local myHeadPos = get_attachment(LocalPlayer()).Pos
+            local myHeadPos = LocalPlayer():GetShootPos()
+            local entHeadPos = get_attachment(target).Pos
+            local relativeX = (entHeadPos.x) - (myHeadPos.x)
+            local relativeY = (entHeadPos.y) - (myHeadPos.y)
+            local relativeZ = (entHeadPos.z) - (myHeadPos.z)
+            local distanceFromMe = math.sqrt((relativeX * relativeX) + (relativeY * relativeY))
+
+            local yaw = math.atan2(relativeY, relativeX)
+            local pitch = math.atan2(relativeZ, distanceFromMe)
+
+            yaw = (yaw * 180 / PI)
+            pitch = (pitch * 180 / PI) * -1 -- the pitch should be converted to its opposite for it to work in source
+
+            -- traceline from player to target to check if you have line of sight
+            local trace = { start = myHeadPos, endpos = entHeadPos, filter = LocalPlayer()}
+            local traceResult = util.TraceLine(trace, LocalPlayer())
+
+            if traceResult.Entity == target then
+                LocalPlayer():SetEyeAngles(Angle(pitch, yaw, 0))
+            end
         end
     end
 end
-hook.Add("HUDPaint", "thirdeye", thirdeye)
 
-function norecoil()
-	if Recoil == false and WeaponCheck() then
-		LocalPlayer():GetActiveWeapon().Primary.Recoil = 0
-	end
+-- simple esp puts a nametag above all players in server
+function esp() 
+    local myPos = LocalPlayer():GetPos()
+    for k, v in pairs (player.GetAll()) do
+        if v == nil then
+        elseif v:SteamID() == LocalPlayer():SteamID() then
+        elseif v:Health() <= 0 then
+        elseif v:IsAdmin() or v:IsSuperAdmin() then
+            local plrpos = (v:GetPos() + Vector(0, 0, 80)):ToScreen()
+            draw.DrawText("< "..v:Name().." >", "Trebuchet24", plrpos.x, plrpos.y + 30, Color(220, 60, 90, 255), 1)
+            draw.DrawText("Health: " ..v:Health().. " Armor: " ..v:Armor().. "", "Trebuchet24", plrpos.x, plrpos.y + 15, Color(220, 60, 90, 255), 1)
+            draw.DrawText("" ..target_dist(v).. "", "Trebuchet24", plrpos.x, plrpos.y, Color(220, 60, 90, 255), 1)
+        else
+            local plrpos = (v:GetPos() + Vector(0, 0, 80)):ToScreen()
+            draw.DrawText("< "..v:Name().." >", "Trebuchet24", plrpos.x, plrpos.y + 30, Color(0, 255, 0), 1)
+            draw.DrawText("Health: " ..v:Health().. " Armor: " ..v:Armor().. "", "Trebuchet24", plrpos.x, plrpos.y + 15, Color(0, 255, 0), 1)
+            draw.DrawText("" ..target_dist(v).. "", "Trebuchet24", plrpos.x, plrpos.y, Color(0, 255, 0), 1)
+        end
+    end
 end
-hook.Add("Think", "norecoil", norecoil)
+
+-- draws a line on the screen from the center to all other player heads
+function tracers()
+    local myPos = LocalPlayer():GetPos()
+    local center = Vector(ScrW() / 2, ScrH() / 2, 0)
+
+    for k, v in pairs (player.GetAll()) do
+        if v == nil then
+        elseif v:SteamID() == LocalPlayer():SteamID() then
+        elseif v:Health() <= 0 then
+        elseif v:IsAdmin() or v:IsSuperAdmin() then
+            local entHeadPos = (get_attachment(v).Pos):ToScreen()
+            surface.SetDrawColor(220, 60, 90, 255)
+            surface.DrawLine(center.x, center.y, entHeadPos.x, entHeadPos.y) 
+        else
+            local entHeadPos = (get_attachment(v).Pos):ToScreen()
+            surface.SetDrawColor(0, 255, 0)
+            surface.DrawLine(center.x, center.y, entHeadPos.x, entHeadPos.y)
+        end 
+    end
+end
 
 function bhop()
     if input.IsKeyDown(KEY_SPACE) then
@@ -29,32 +152,68 @@ function bhop()
         end
     end
 end
-hook.Add("Think", "bhop", bhop)
 
-function trigga()
+function triggerbot()
     local Target = LocalPlayer():GetEyeTrace().Entity
-    if LocalPlayer():Alive() and LocalPlayer():GetActiveWeapon():IsValid() and ( Target:IsPlayer() or Target:IsNPC() ) then
+    if LocalPlayer():Alive() and LocalPlayer():GetActiveWeapon():IsValid() and Target:IsPlayer() then
         RunConsoleCommand("+attack")
-        timer.Create("trigga", 0, 0.01, function()
+        timer.Create("trigga", 0, 0.149, function()
         RunConsoleCommand( "-attack" )
         end)
     end
 end
 
-function aimbot()
-    local me = LocalPlayer()
-    local trace = util.GetPlayerTrace(me)
-    local traceres = util.TraceLine(trace)
+-------------------------
+-- add toggle commands --
+-------------------------
 
-    if traceres.HitNonWorld then
-        local target = traceres.Entity
-        
-        if target:IsPlayer() then 
-            local targethead = target:LookupBone("ValveBiped.Bip01_Head1")
-            local targetheadpos, targetheadang = target:GetBonePosition(targethead)
-            me:SetEyeAngles((targetheadpos - me:GetShootPos()):Angle())
-        end
-    end
-end
-hook.Add("Think", "aimbot", aimbot)
-hook.Add( "Think", "trigga", trigga)
+-- add esp toggle
+concommand.Add("+esp", function()
+    hook.Add("HUDPaint", "esp", esp)
+end)
+concommand.Add("-esp", function()
+    hook.Remove("HUDPaint", "esp")
+end)
+
+-- add tracers toggle
+concommand.Add("+tracers", function()
+    hook.Add("HUDPaint", "tracers", tracers)
+end)
+concommand.Add("-tracers", function()
+    hook.Remove("HUDPaint", "tracers")
+end)
+
+-- add aimbot toggle (due to this being tied to the game, ab cant run constantly, so it runs
+-- at the min possible delay, 0.149)
+concommand.Add("+aimbot", function()
+    hook.Add("Think", "aimbot", aimbot)
+    timer.Create("aimbot", 0, 0.149, function() aimbot() end)
+end)
+concommand.Add("-aimbot", function()
+    timer.Remove("aimbot")
+    hook.Remove("Think", "aimbot")
+end)
+
+-- add triggerbot toggle
+concommand.Add("+triggerbot", function()
+    hook.Add("Think", "triggerbot", triggerbot)
+end)
+concommand.Add("-triggerbot", function()
+    hook.Remove("Think", "triggerbot")
+end)
+
+-- add bhop toggle
+concommand.Add("+bhop", function()
+    hook.Add("HUDPaint", "bhop", bhop)
+end)
+concommand.Add("-bhop", function()
+    hook.Remove("Think", "bhop")
+end)
+
+print(string.format("=== loaded cheat.lua ===\n\n"..
+                    "+esp/-esp\t\t\t\ttoggles esp (red: admin, green: user)\n"..
+                    "+tracers/-tracers\t\ttoggles tracers\n"..
+                    "+aimbot/-aimbot\t\ttoggles aimbot\n"..
+                    "+triggerbot/-triggerbot\ttoggles triggerbot\n"..
+                    "+bhop/-bhop\t\t\ttoggles bhop\n\n"..
+                    "====== enjoy! =======\n"))
