@@ -1,15 +1,12 @@
--- By idchoppers
-print(string.format("\n\n\n*** cheat.lua by idchoppers ***\n\n\n"))
--- load the cheat by placing in GarrysMod/garrysmod/lua
--- then run lua_openscript_cl filename
--- run individual hooks by running lua_run_cl "function()"
-
--- server must have sv_allowcslua 1
+-- Author     : idchoppers
+-- Description: A Lua script that gives you some advantages in game.
 
 -- global pi
 PI = math.pi
 
--- finds dist between singular ent and player
+print(string.format("\n\n\n*** cheat.lua by idchoppers ***\n\n\n"))
+
+-- finds dist between and entity and player
 function target_dist(ent)
     local dist = -1
     if ent == nil then
@@ -29,7 +26,7 @@ function target_dist(ent)
 end
 hook.Add("Think", "target_dist", target_dist)
 
--- finds the closest player for the ab, using a min algo to find this
+-- finds the closest player for the aimbot by using a min algo
 function closest_player()
     local min = 9999999999999999999.99
     local playerID = -1
@@ -86,9 +83,10 @@ function aimbot()
                 local pitch = math.atan2(relativeZ, distanceFromMe)
 
                 yaw = (yaw * 180 / PI)
-                pitch = (pitch * 180 / PI) * -1 -- the pitch should be converted to its opposite for it to work in source
+                -- the pitch should be converted to its opposite for it to work in source
+                pitch = (pitch * 180 / PI) * -1
 
-                -- traceline from player to target to check if you have line of sight
+                -- traceline from player to target to check line of sight
                 local trace = { start = myHeadPos, endpos = entHeadPos, filter = LocalPlayer()}
                 local traceResult = util.TraceLine(trace, LocalPlayer())
 
@@ -100,7 +98,7 @@ function aimbot()
     end
 end
 
--- simple esp puts a nametag above all players in server
+-- puts a nametag above all players in server
 function esp() 
     local myPos = LocalPlayer():GetPos()
     for k, v in pairs (player.GetAll()) do
