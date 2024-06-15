@@ -1,5 +1,7 @@
 -- Author     : idchoppers
 -- Description: A Lua script that gives you some advantages in game.
+-- Copyright 2024 Kyle Smith
+-- Licensed under GPL-3.0-or-later
 
 -- global pi
 PI = math.pi
